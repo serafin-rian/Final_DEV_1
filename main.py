@@ -1,153 +1,101 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
+from sqlalchemy.orm import Session
 from typing import List
 from models import Jugador, Estadistica
+from database import get_db
 from utils.positions import Position
 from utils.states import States
 
 app = FastAPI(title="sigmotoa FC")
 
-
-jugadores: List[Jugador] = []   # lista donde guardaremos los jugadores
-
-@app.get("/")
-async def root():
-    return {"message": "sigmotoa FC data el mejor equipo de futbol de Colombia"}
-
-
-@app.get("/hello/{name}")
-async def say_hello(name: str):
-    return {"message": f"Bienvenido a sigmotoa FC {name}"}
-
 # -----------------------------
 # CREAR JUGADOR
 # -----------------------------
 @app.post("/jugadores", status_code=201)
-async def crear_jugador(jugador: Jugador):
-    # VALIDAR numero único (si viene definido)
+async def crear_jugador(jugador: Jugador, db: Session = Depends(get_db)):
+    # VALIDAR número único (si viene definido)
     if jugador.numero is not None:
-        for j in jugadores:
-            if j.numero == jugador.numero:
-                raise HTTPException(
-                    status_code=400,
-                    detail="El número de camiseta ya está en uso."
-                )
+        db_jugador = db.query(Jugador).filter(Jugador.numero == jugador.numero).first()
+        if db_jugador:
+            raise HTTPException(status_code=400, detail="El número de camiseta ya está en uso.")
     
-    # VALIDAR que el ID no exista
-    for j in jugadores:
-        if j.id == jugador.id:
-            raise HTTPException(
-                status_code=400,
-                detail="El ID del jugador ya existe."
-            )
-
-    jugadores.append(jugador)
+    db.add(jugador)
+    db.commit()
+    db.refresh(jugador)
     return jugador
 
 
 # -----------------------------
 # LISTAR TODOS LOS JUGADORES
 # -----------------------------
-@app.get("/jugadores")
-async def listar_jugadores():
-    return jugadores
+@app.get("/jugadores", response_model=List[Jugador])
+async def listar_jugadores(db: Session = Depends(get_db)):
+    return db.query(Jugador).all()
 
 
 # -----------------------------
 # OBTENER JUGADOR POR ID
 # -----------------------------
-@app.get("/jugadores/{jugador_id}")
-async def obtener_jugador(jugador_id: int):
-    for j in jugadores:
-        if j.id == jugador_id:
-            return j
-    raise HTTPException(status_code=404, detail="Jugador no encontrado")
+@app.get("/jugadores/{jugador_id}", response_model=Jugador)
+async def obtener_jugador(jugador_id: int, db: Session = Depends(get_db)):
+    jugador = db.query(Jugador).filter(Jugador.id == jugador_id).first()
+    if jugador is None:
+        raise HTTPException(status_code=404, detail="Jugador no encontrado")
+    return jugador
 
 
 # -----------------------------
 # ACTUALIZAR JUGADOR (PUT)
 # -----------------------------
-@app.put("/jugadores/{jugador_id}")
-async def actualizar_jugador(jugador_id: int, datos: Jugador):
-    for i, j in enumerate(jugadores):
-        if j.id == jugador_id:
-
-            # VALIDAR número único
-            if datos.numero is not None:
-                for otro in jugadores:
-                    if otro.numero == datos.numero and otro.id != jugador_id:
-                        raise HTTPException(
-                            status_code=400,
-                            detail="El número de camiseta ya está en uso."
-                        )
-
-            jugadores[i] = datos
-            return datos
-
-    raise HTTPException(status_code=404, detail="Jugador no encontrado")
-
-
-#-------
-#JUGADORES ACTIVOS
-#-------
-
-@app.get("/jugadores/activos")
-async def listar_jugadores_activos():
-    """
-    Devuelve todos los jugadores cuyo estado es ACTIVO.
-    """
-
-    activos = [j for j in jugadores if j.estado == States.ACTIVO]
-
-    return activos
-
-
-# -----------------------------
-# BORRAR JUGADOR
-# -----------------------------
-@app.delete("/jugadores/{jugador_id}")
-async def borrar_jugador(jugador_id: int):
-    for i, j in enumerate(jugadores):
-        if j.id == jugador_id:
-            eliminado = jugadores.pop(i)
-            return {"mensaje": "Jugador eliminado", "jugador": eliminado}
-
-    raise HTTPException(status_code=404, detail="Jugador no encontrado")
-
-
-
-# ----------------------------------------//---------------------------------//----------------------#
-
-# -----------------------------
-# estadisticas de un jugador 
-# -----------------------------
-
-@app.get("/jugadores/{jugador_id}/estadisticas/resumen")
-async def resumen_estadisticas_jugador(jugador_id: int, estadisticas: Estadistica):
-    """
-    Devuelve un resumen con estadísticas acumuladas del jugador:
-    - goles totales
-    - asistencias totales
-    - minutos jugados
-    - tarjetas amarillas
-    - tarjetas rojas
-    - cantidad de partidos jugados
-    """
-
-    # Verificar si el jugador existe
-    jugador = None
-    for j in jugadores:
-        if j.id == jugador_id:
-            jugador = j
-            break
-
+@app.put("/jugadores/{jugador_id}", response_model=Jugador)
+async def actualizar_jugador(jugador_id: int, datos: Jugador, db: Session = Depends(get_db)):
+    jugador = db.query(Jugador).filter(Jugador.id == jugador_id).first()
     if jugador is None:
         raise HTTPException(status_code=404, detail="Jugador no encontrado")
 
-    # Filtrar estadísticas del jugador
-    stats_jugador = [e for e in estadisticas if e.jugador_id == jugador_id]
+    if datos.numero is not None:
+        db_jugador = db.query(Jugador).filter(Jugador.numero == datos.numero).first()
+        if db_jugador and db_jugador.id != jugador_id:
+            raise HTTPException(status_code=400, detail="El número de camiseta ya está en uso.")
 
-    # Si no tiene estadísticas, devolver valores en cero
-    if not stats_jugador:
+    jugador.nombre = datos.nombre
+    jugador.numero = datos.numero
+    jugador.posicion = datos.posicion
+    jugador.estado = datos.estado
+    jugador.edad = datos.edad
+
+    db.commit()
+    db.refresh(jugador)
+    return jugador
+
+
+# -----------------------------
+# ELIMINAR JUGADOR
+# -----------------------------
+@app.delete("/jugadores/{jugador_id}")
+async def borrar_jugador(jugador_id: int, db: Session = Depends(get_db)):
+    jugador = db.query(Jugador).filter(Jugador.id == jugador_id).first()
+    if jugador is None:
+        raise HTTPException(status_code=404, detail="Jugador no encontrado")
+
+    db.delete(jugador)
+    db.commit()
+    return {"mensaje": "Jugador eliminado", "jugador": jugador}
+
+
+# -----------------------------
+# OBTENER ESTADÍSTICAS DEL JUGADOR
+# -----------------------------
+@app.get("/jugadores/{jugador_id}/estadisticas/resumen")
+async def resumen_estadisticas_jugador(jugador_id: int, db: Session = Depends(get_db)):
+    jugador = db.query(Jugador).filter(Jugador.id == jugador_id).first()
+    if jugador is None:
+        raise HTTPException(status_code=404, detail="Jugador no encontrado")
+
+    # Obtener las estadísticas del jugador
+    estadisticas = db.query(Estadistica).filter(Estadistica.jugador_id == jugador_id).all()
+
+    if not estadisticas:
         return {
             "jugador_id": jugador_id,
             "partidos_jugados": 0,
@@ -158,15 +106,13 @@ async def resumen_estadisticas_jugador(jugador_id: int, estadisticas: Estadistic
             "tarjetas_rojas": 0
         }
 
-    # Sumar estadísticas
-    goles = sum(e.goles for e in stats_jugador)
-    asistencias = sum(e.asistencias for e in stats_jugador)
-    minutos = sum(e.minutos for e in stats_jugador)
-    amarillas = sum(e.tarjetas_amarillas for e in stats_jugador)
-    rojas = sum(e.tarjetas_rojas for e in stats_jugador)
-    partidos = len(stats_jugador)
+    goles = sum(e.goles for e in estadisticas)
+    asistencias = sum(e.asistencias for e in estadisticas)
+    minutos = sum(e.minutos for e in estadisticas)
+    amarillas = sum(e.tarjetas_amarillas for e in estadisticas)
+    rojas = sum(e.tarjetas_rojas for e in estadisticas)
+    partidos = len(estadisticas)
 
-    # Retornar resumen
     return {
         "jugador_id": jugador_id,
         "partidos_jugados": partidos,
