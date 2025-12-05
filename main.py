@@ -5,7 +5,7 @@ app = FastAPI(title="sigmotoa FC")
 
 @app.get("/")
 async def root():
-    return {"message": "sigmotoa FC data"}
+    return {"message": "sigmotoa FC data el mejor equipo de futbol de Colombia"}
 
 
 @app.get("/hello/{name}")
