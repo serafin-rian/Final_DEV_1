@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from typing import List
-from models import Jugador
+from models import Jugador, Estadistica
 from utils.positions import Position
 from utils.states import States
 
@@ -103,7 +103,7 @@ async def borrar_jugador(jugador_id: int):
 # -----------------------------
 
 @app.get("/jugadores/{jugador_id}/estadisticas/resumen")
-async def resumen_estadisticas_jugador(jugador_id: int):
+async def resumen_estadisticas_jugador(jugador_id: int, estadisticas: Estadistica):
     """
     Devuelve un resumen con estadísticas acumuladas del jugador:
     - goles totales

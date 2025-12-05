@@ -22,11 +22,14 @@ class Jugador(BaseModel):
 
 
 class Estadistica(BaseModel):
-    
-    tiempo_jugado : int 
+
+    asistencias : int 
+    partidos_jugados : int
+    minutos : int 
     goles : int
-    faltas : int
-    tarjetas : int
+    tarjetas_amarillas : int
+    tarjetas_rojas : int 
+    
 
 
 
