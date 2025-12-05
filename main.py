@@ -86,6 +86,21 @@ async def actualizar_jugador(jugador_id: int, datos: Jugador):
     raise HTTPException(status_code=404, detail="Jugador no encontrado")
 
 
+#-------
+#JUGADORES ACTIVOS
+#-------
+
+@app.get("/jugadores/activos")
+async def listar_jugadores_activos():
+    """
+    Devuelve todos los jugadores cuyo estado es ACTIVO.
+    """
+
+    activos = [j for j in jugadores if j.estado == States.ACTIVO]
+
+    return activos
+
+
 # -----------------------------
 # BORRAR JUGADOR
 # -----------------------------
@@ -97,6 +112,10 @@ async def borrar_jugador(jugador_id: int):
             return {"mensaje": "Jugador eliminado", "jugador": eliminado}
 
     raise HTTPException(status_code=404, detail="Jugador no encontrado")
+
+
+
+# ----------------------------------------//---------------------------------//----------------------#
 
 # -----------------------------
 # estadisticas de un jugador 
