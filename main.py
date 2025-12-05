@@ -97,3 +97,63 @@ async def borrar_jugador(jugador_id: int):
             return {"mensaje": "Jugador eliminado", "jugador": eliminado}
 
     raise HTTPException(status_code=404, detail="Jugador no encontrado")
+
+# -----------------------------
+# estadisticas de un jugador 
+# -----------------------------
+
+@app.get("/jugadores/{jugador_id}/estadisticas/resumen")
+async def resumen_estadisticas_jugador(jugador_id: int):
+    """
+    Devuelve un resumen con estadísticas acumuladas del jugador:
+    - goles totales
+    - asistencias totales
+    - minutos jugados
+    - tarjetas amarillas
+    - tarjetas rojas
+    - cantidad de partidos jugados
+    """
+
+    # Verificar si el jugador existe
+    jugador = None
+    for j in jugadores:
+        if j.id == jugador_id:
+            jugador = j
+            break
+
+    if jugador is None:
+        raise HTTPException(status_code=404, detail="Jugador no encontrado")
+
+    # Filtrar estadísticas del jugador
+    stats_jugador = [e for e in estadisticas if e.jugador_id == jugador_id]
+
+    # Si no tiene estadísticas, devolver valores en cero
+    if not stats_jugador:
+        return {
+            "jugador_id": jugador_id,
+            "partidos_jugados": 0,
+            "goles": 0,
+            "asistencias": 0,
+            "minutos": 0,
+            "tarjetas_amarillas": 0,
+            "tarjetas_rojas": 0
+        }
+
+    # Sumar estadísticas
+    goles = sum(e.goles for e in stats_jugador)
+    asistencias = sum(e.asistencias for e in stats_jugador)
+    minutos = sum(e.minutos for e in stats_jugador)
+    amarillas = sum(e.tarjetas_amarillas for e in stats_jugador)
+    rojas = sum(e.tarjetas_rojas for e in stats_jugador)
+    partidos = len(stats_jugador)
+
+    # Retornar resumen
+    return {
+        "jugador_id": jugador_id,
+        "partidos_jugados": partidos,
+        "goles": goles,
+        "asistencias": asistencias,
+        "minutos": minutos,
+        "tarjetas_amarillas": amarillas,
+        "tarjetas_rojas": rojas
+    }
