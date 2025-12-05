@@ -1,17 +1,20 @@
-### PARCIAL FINAL DESARROLLO DE SOWTARE 
-en este repo podemos identificar un proyecto deportivo 
-en el cual se implementa un CRUD  para jugadores 
-el proyecto esta orientado el fastapi con uso de docs , bases de datos SQLite , render 
+# Sigmotoa FC - FastAPI
 
-### PARCIAL FINAL DESARROLLO DE SOWTARE 
+Este es un proyecto de API RESTful para el equipo de fútbol "Sigmotoa FC" implementado con **FastAPI** y **SQLAlchemy**. Proporciona varias rutas para gestionar jugadores y estadísticas, así como interactuar con una base de datos SQLite.
 
-### ENDPONTS 
-CREAR JUGADOR 
-POST / CREAR / JUGADOR 
-GET / LISTAR / JUGADORES 
-GET/ BUSCAR / JUGADORES{id]
-PUT / ACUTUALIZAR / JUGADORES{id}
-GET / ESTADO / JUGADOR(ACIVO/INACTIVO)
-DELETE / ELIMINAR / JUGADORES{id}
-GET / {jugador_id} / ESTADISTICAS
+## Requisitos
 
+- Python 3.8+
+- FastAPI
+- Uvicorn (para ejecución del servidor)
+- SQLAlchemy (si usas base de datos)
+- SQLite (si usas base de datos SQLite)
+.
+├── main.py          # Archivo principal de FastAPI
+├── models.py        # Definición de los modelos (SQLAlchemy)
+├── database.py      # Conexión y configuración de la base de datos
+├── requirements.txt # Dependencias del proyecto
+└── README.md        # Este archivo
+
+
+uvicorn main:app --reload
