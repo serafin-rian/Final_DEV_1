@@ -8,3 +8,6 @@ CONTESTE COMANDO ESTELAR
 
 dejame escribri
 solo puedo escirbir si no esta haciendo un commit bobo
+
+
+oe pero no utilice entonces el readme , utilice el "ISSUES" ESTA ARRIBA EN LA PARTE SUPERIOR IZQUIERDA ALADO DE CODE 
