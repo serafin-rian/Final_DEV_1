@@ -19,8 +19,15 @@ class Jugador(BaseModel):
     estado: States                                # Valor del Enum States
     edad: Optional[int] = None
 
-class Estadistica():
-    pass
+
+
+class Estadistica(BaseModel):
+    
+    tiempo_jugado : int 
+    goles : int
+    faltas : int
+    tarjetas : int
+
 
 
 class Partido():
